@@ -116,8 +116,9 @@ BIOSVECTOR:							; Check C here to avoid calling too big of a table.
 		RET		NC					; Just return if the call doesn't exist. 
 		PUSH	DE					; Store the instruction for later.
 		LD		HL,BDOSTABLE
-		RL		A					; Double it.
-		AND		$FE					; And mask any carry. We have a maximum of 128 options.
+;		RL		A					; Double it.
+;		AND		$FE					; And mask any carry. We have a maximum of 128 options.
+		SLA		A					; replace RL A and AND $FE with this - SLA will zero the incomming bit. 
 		ADD		A,L
 		LD		L,A
 		XOR		A					; Clear A.
