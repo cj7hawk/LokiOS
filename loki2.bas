@@ -11643,14 +11643,14 @@ rem	print "BOOTSTRAP=BOOTSTRAP.BIN at F0000 BY DEFAULT"
 rem	BINARYLOADFILE("BOOTSTRAP.BIN",&h0F0000)			: rem The Bootstrap needs to occur at the END OF THE MEMORY.  Bootstrap is 4K of ROM. 
 
 	print "BOOTSTRAP=LOKI.IMG at F0000 BY DEFAULT"
-	BINARYLOADFILE("LOKI.IMG",&h0F0000)			: rem The Bootstrap needs to occur at the END OF THE MEMORY.  Bootstrap is 4K of ROM. 
+	BINARYLOADFILE("loki.img",&h0F0000)			: rem The Bootstrap needs to occur at the END OF THE MEMORY.  Bootstrap is 4K of ROM. 
 
 	print "NVM=NVM.IMG at 80000 BY DEFAULT"
-	BINARYLOADFILE("NVM.IMG",&h080000)			: rem Load up the NVM file - might be EEPROM or battery backed RAM. 
+	BINARYLOADFILE("nvm.img",&h080000)			: rem Load up the NVM file - might be EEPROM or battery backed RAM. 
 
 
 	print "VIDEOBIOS=VBIOS.IMG as E0000 BY DEFAULT"
-	BINARYLOADFILE("VBIOS.IMG",&h0E0000)		: rem Video Bios, Network Bios, and two User Bios files. 
+	BINARYLOADFILE("vbios.img",&h0E0000)		: rem Video Bios, Network Bios, and two User Bios files. 
 	
 if LOADBIOS <> "" then									: rem leave these all in the usual location at 00000 to 0FFFF until BOOTSTRAP loads them. 
 	print "Loadbios=";loadbios;" at";startbios
@@ -11682,8 +11682,8 @@ PC=start	: rem Set Program Counter.
 rem loadexec("cpmbasic.bin") : rem Load in a program and run it. 
 
 
-disk=loadfile("NEWLOKI.DSK")
-rem disk=loadfile("LOKI2.DSK")
+disk=loadfile("newloki.dsk")
+rem disk=loadfile("loki2.dsk")
 
 
 RESETz80()
@@ -11766,7 +11766,7 @@ if savememory then saveram()
 
 
 rem Save disk as a different disk for testing. ( Main disk is read only )
-open "OUTDISK.DSK" for output as #1
+open "outdisk.dsk" for output as #1
 for count=1 to 1000000
 print #1,mid(DISK,count,1);
 next count

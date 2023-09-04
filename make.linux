@@ -1,8 +1,8 @@
 fbc asm.bas
 fbc loki2.bas
-fbc lokidisk.BAS
+fbc lokidisk.bas
 fbc lokinvm.bas
-fbc bindisk.BAS
+fbc bindisk.bas
 ./asm bios
 ./asm my-bdos
 ./asm ccp
