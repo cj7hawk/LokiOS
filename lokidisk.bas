@@ -38,7 +38,7 @@ dim shared alloc(16) as integer	: rem Array of allocations we want to write into
 dim shared missing as integer	: rem missing padding on end of file. 
 
 BOOTFILE="bootstrap.bin"
-BDOSFILE="My-Bdos.bin"
+BDOSFILE="my-bdos.bin"
 BIOSFILE="bios.bin"
 FILEIN="ccp.bin"
 FILEOUT="ccp     bin"
@@ -232,29 +232,22 @@ nextalloc=2						: rem Start with allocation 2 - Allocations 0 and 1 are used fo
 
 rem FILE TRANSFER LIST - THIS IS FIXED SINCE IT GENERATES AN EPROM OUTPUT. 
 transfer ("ccp.bin","CCP     BIN")
-rem transfer ("videodrv.bin","VIDEODRVCOM")
-rem stransfer ("startup.sub","STARTUP SUB")		
-rem transfer ("mbasic.com","MBASIC  COM")
-rem transfer ("test.txt","test    txt")
-rem transfer ("TST1.COM","tst1    com")
-rem transfer ("BOOTLOAD.COM","bootloadcom")
-transfer ("STARTUP.BIN","LOKI    COM")
-rem transfer ("ONE.TXT","1       TXT")
-rem transfer ("TWO.TXT","2       TXT")
-transfer ("STAT.COM","STAT    COM")
-rem transfer ("TESTBDOS.BIN","TESTBDOSCOM")
-transfer ("ALTCCP.BIN","ALTCCP  BIN")
-transfer ("ALTBDOS.BIN","ALTBDOS BIN")
-transfer ("MOVECCP.BIN","MOVECCP COM")
-transfer ("MOVEBDOS.BIN","MOVEBDOSCOM")
-transfer ("HALT.BIN","HALT    COM")
-transfer ("LOADCPM.BIN","LOADCPM COM")
-transfer ("ALTCPM.BIN","ALTCPM  BIN")
-transfer ("RESET.BIN","RESET   COM")
-rem transfer ("LINSTALL.BIN","LINSTALLCOM")
-rem transfer ("VIDEO512.BIN","VIDEO512BIN")
-transfer ("PIP.COM","PIP     COM")
-transfer ("FSCK.COM","FSCK    COM")
+
+transfer ("startup.bin","LOKI    COM")
+
+transfer ("stat.com","STAT    COM")
+
+transfer ("altccp.bin","ALTCCP  BIN")
+transfer ("altbdos.bin","ALTBDOS BIN")
+transfer ("moveccp.bin","MOVECCP COM")
+transfer ("movebdos.bin","MOVEBDOSCOM")
+transfer ("halt.bin","HALT    COM")
+transfer ("loadcpm.bin","LOADCPM COM")
+transfer ("altcpm.bin","ALTCPM  BIN")
+transfer ("reset.bin","RESET   COM")
+
+transfer ("pip.com","PIP     COM")
+transfer ("fsck.com","FSCK    COM")
 
 rem print "Directory:";directory
 

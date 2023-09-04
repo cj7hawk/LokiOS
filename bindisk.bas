@@ -38,7 +38,7 @@ dim shared alloc(16) as integer	: rem Array of allocations we want to write into
 dim shared missing as integer	: rem missing padding on end of file. 
 
 BOOTFILE="bootstrap.bin"
-BDOSFILE="My-Bdos.bin"
+BDOSFILE="my-bdos.bin"
 BIOSFILE="bios.bin"
 FILEIN="ccp.bin"
 FILEOUT="ccp     bin"
@@ -231,8 +231,8 @@ SUB VBIOS
 
 
 	rem FILE TRANSFER LIST - THIS IS FIXED SINCE IT GENERATES AN EPROM OUTPUT. 
-	transfer ("LINSTALL.BIN","VIDEO   COM")
-	transfer ("VIDEO512.BIN","VIDEO512BIN")
+	transfer ("linstall.bin","VIDEO   COM")
+	transfer ("video512.bin","VIDEO512BIN")
 
 	rem print "Directory:";directory
 
@@ -271,7 +271,7 @@ SUB NBIOS
 
 	rem FILE TRANSFER LIST - THIS IS FIXED SINCE IT GENERATES AN EPROM OUTPUT. 
 	
-	transfer ("NBIOS.TXT","NBIOS   TXT")
+	transfer ("nbios.txt","NBIOS   TXT")
 
 
 	rem print "Directory:";directory
@@ -309,7 +309,7 @@ SUB UBIOS1
 
 
 	rem FILE TRANSFER LIST - THIS IS FIXED SINCE IT GENERATES AN EPROM OUTPUT. 
-	transfer ("UBIOS1.TXT","UBIOS1  TXT")
+	transfer ("ubios1.txt","UBIOS1  TXT")
 
 
 	rem print "Directory:";directory
@@ -347,7 +347,7 @@ SUB UBIOS2
 
 
 	rem FILE TRANSFER LIST - THIS IS FIXED SINCE IT GENERATES AN EPROM OUTPUT. 
-	transfer ("UBIOS2.TXT","UBIOS2  TXT")
+	transfer ("ubios2.txt","UBIOS2  TXT")
 
 	rem print "Directory:";directory
 
