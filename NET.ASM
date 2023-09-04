@@ -4,7 +4,9 @@
 ; Supports simple protocols for network drive access and serial comms to another system. 
 ; 
 ; Conventions. 
-; 1. MTU and MRU is 256 bytes AT THE IP LEVEL. 
+; 1. MTU and MRU is 256 bytes AT THE IP LEVEL. There is not MAC level.
+; 2. Maximum payload should be 128 bytes to match CP/M's DMA size, however other information can exist within the packet.
+; 3. 
 
 
 

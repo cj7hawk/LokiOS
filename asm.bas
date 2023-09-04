@@ -8,6 +8,10 @@ rem 20/11/2022 Fixed Relative Jump mask to detect Out Of Bounds relative jump ta
 rem 23/11/2022 *BUG* EQU LABEL_LABEL,val works, but LABEL_LABEL EQU val only sees "LABEL_" as an instruction. ** NOT YET FIXED **
 rem 3/12/2022  Fixed up label value detection failure due to Pass1 label message suppression. Identifies label value changing now. 
 rem 10/05/2023 Fixed Casefix to ignore anything in quotes ( and to ensure that one or the other is recognized. )
+rem 28/08/2023 Changed LitByte to SuperEVAL for DEFB..... Not sure if this is a good idea. I need to write a manual for this stuff. 
+rem 28/08/2023 Changed Litbyte back. Can also use DEFC instead of DEFB.
+rem 28/08/2023 Corrected 8 bit relative jump - was missing when the value was 80 - 
+
 
 dim shared PC as integer		: rem Program Counter - We will use this to compile. Maybe I should use another? Will it clash? Also used in z80.bas
 dim shared linePC as integer	: rem Since we change the PC as we progress through an instruction, sometimes we want to know where it started. 
@@ -2830,8 +2834,15 @@ RELBYTE:
 		MEMLOC=MEMLOC-PC-1	: rem Make Relative. The minus-1 is because we progressed the PC when we picked up the opcode for the target of the jump. 
 
 		TESTVAL=MEMLOC
- 		MEMLOC=MEMLOC mod 128
-		IF TESTVAL <> MEMLOC and pass <> 1 then AddError ("Warning - Relative jump from "+hex(PC+1,4)+" to "+hex(Displacement,4)+" is out of bounds. ")  
+		
+ 		MEMLOC=MEMLOC AND &hFF		: rem Just keep 8 bits of it. 
+		IF TESTVAL > &h7F and TESTVAL < &hFF80 and pass <> 1 then 		
+				rem We do it this way, because otherwise it doesn't know that the value can be -80 (negative larger than positive in signed integers )
+				AddError ("Warning - Relative jump from "+hex(PC+1,4)+" to "+hex(Displacement,4)+" is out of bounds. ")  
+				ENDIF
+
+		
+
 		rem Test for Displacement 0, since if we're trying to absolute jump to 0000, it's probably because we haven't found the label location yet. 
 		rem The Displacement 0 is to avoid errors... But since we have passes, let's use that in case we get a real jump rel to zero. 
 
@@ -2865,8 +2876,10 @@ relative=1
 		MEMLOC=MEMLOC-PC-1	: rem Make Relative. The minus-1 is because we progressed the PC when we picked up the opcode for the target of the jump. 
 
 		TESTVAL=MEMLOC
- 		MEMLOC=MEMLOC mod 128
-		IF TESTVAL <> MEMLOC and pass <> 1 then AddError ("Warning - Relative jump from "+hex(PC+1,4)+" to "+hex(Displacement,4)+" is out of bounds. ")  
+ 		MEMLOC=MEMLOC and &hFF		: rem MASK instead of MOD since -80 is a valid number 
+		IF TESTVAL > &h7F and TESTVAL < &hFF80 and pass <> 1 then 	
+			AddError ("Warning - Relative jump from "+hex(PC+1,4)+" to "+hex(Displacement,4)+" is out of bounds. ")  
+			endif
 		rem Test for Displacement 0, since if we're trying to absolute jump to 0000, it's probably because we haven't found the label location yet. 
 		rem The Displacement 0 is to avoid errors... But since we have passes, let's use that in case we get a real jump rel to zero. 
 
@@ -2949,6 +2962,8 @@ rem Can be a list separated by commas also. eg, 'A', "'B'" and can mix formats, 
 rem examples-
 rem DB 01,$5A,%01010101,'G','A'+%1000000,3*1 : rem last example is 3 and 1. 
 rem 
+
+rem Keep Separate as we want to test for 8 bits or make an error.
 
 Loperator=""
 cont=1
@@ -3216,7 +3231,8 @@ rem Assembler Directives.
 			Print "ORG Statement found:";target; " on line ";linenumber;" Equates to:";hex(PC,4)
 			
 		Case "DEFB.", "DB...", ".DEFB", ".DB.."
-			LitByte(target)		
+rem			SuperEVAL(target)	
+			Litbyte(target)
 
 		Case "DEFC."
 			Writecode(Supereval(Target))
