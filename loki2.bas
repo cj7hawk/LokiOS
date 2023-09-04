@@ -11533,6 +11533,8 @@ rem PRINTHEX (CODETEXT,(showend-showstart)+1)
 
 CONSOLEPRINTHEX (CODETEXT,(showend-showstart)+1)
 
+Print "End of Text"
+
 return 0
 End Function
 
@@ -11703,7 +11705,8 @@ rem ###############################
 TOP:
 PCP():M1():Showreg()
 count=count+1
-if count > maxinstructions then trap = 1
+if count < 0 then count=1
+if count = maxinstructions then trap = 1
 if trap = 0 then goto TOP
 
 
