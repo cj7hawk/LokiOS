@@ -1,0 +1,22 @@
+fbc asm.bas
+fbc loki2.bas
+fbc lokidisk.BAS
+fbc lokinvm.bas
+fbc bindisk.BAS
+./asm bios
+./asm my-bdos
+./asm ccp
+./asm bootstrap
+./asm startup
+./asm altbdos
+./asm altccp
+./asm movebdos
+./asm moveccp
+./asm linstall
+./asm video512
+./asm network
+./asm net
+
+./lokidisk
+./lokinvm
+./bindisk
