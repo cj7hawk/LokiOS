@@ -3531,9 +3531,9 @@ Function Labelpass() as integer
 
 linenumber=1
 
-ASMFILE=COMMAND+".ASM"
-BINFILE=COMMAND+".BIN"
-HEXFILE=COMMAND+".HEX"
+ASMFILE=COMMAND+".asm"
+BINFILE=COMMAND+".bin"
+HEXFILE=COMMAND+".hex"
 
 open ASMFILE for input as #9
 
