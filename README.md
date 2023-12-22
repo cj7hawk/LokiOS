@@ -1,5 +1,11 @@
 # LokiOS
-Modern version of CP/M written from the CP/M 2.2 API upwards in z80 Assembly - Created in the same way MS-DOS 1.0 was.
+
+HOW TO BUILD: Download FREEBASIC - https://www.freebasic.net/
+Put Freebasic in a directory. Copy the contents of this repository to the same directory.
+Run MAKE.BAT and it will build all the files. 
+You can run the LOKI2.EXE to then run the emulator, and it should build the environment and work.
+
+LokiOS is a Modern version of CP/M written from the CP/M 2.2 API upwards in z80 Assembly - Created in the same way MS-DOS 1.0 was.
 
 LokiOS is a simple CP/M-compatible OS that is small, hardware agnostic, and builds upon CP/M concepts in a new way to maintain the original objectives of CP/M 2.2
 It provides a base for anyone needing a z80 based OS that works with CP/M software and calls while being updated and intended to be built upon for modern architectures.
