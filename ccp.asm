@@ -10,7 +10,8 @@
 ; 22/06/2023 - Need to work out why autoboot command (LOKI.COM) isn't working suddenly. I am probably starting up wrong with recent changes. BOOT reset order.
 ; 22/06/2023 - Need to add RESET command into CCP for when things go wrong and somehow I end up back in the wrong CCP... Seems it can happen with code left
 ;                   behind when transitioning to DRI CCP. 
-
+; 29-12-2023 - Moved EOF check in TYPE command to before the output stage (so it doesn't output ASCII $1A to screen)
+; 29-12-2023 - Added CTRL-C on Type command
 
 equ	DRIVE_SELECTED	, $0004	; 16 bit.
 equ BDOS 			, $0005	; Address of BDOS jump. 
@@ -1702,6 +1703,9 @@ DIRCOUNT:	DB	$05						; Count of directory entries.
 ; CRLF here. 
 	
 DIR:									; We know the command was "DIR" and we have the FCB at $005C. 	
+		LD		A,$05
+		LD		(DIRCOUNT),A			; Clear current count of entries displayed. 
+		
 		CALL	CRLF					; Simple start, because the system we're on might use CR instead of LF for Enter. 
 
 		LD		DE,$0080
@@ -1732,7 +1736,7 @@ DIR_LOOP:
 ;		JR		Z,DIR_END
 
 		CALL	PRINTEXTENT				; A holds the index, and it's somewhere after $0080 so print the filename within it. 
-		CALL	ONELINE				; Print two spaces or one line  after entry. 
+		CALL	ONELINE					; Print two spaces or one line  after entry. 
 
 		LD		A,(DIRCOUNT)			; New code added he until DIR_NOCRLF to control spacing of directory entries printed. 
 		DEC		A
@@ -2006,6 +2010,15 @@ TYPE_READ:
 ;call showreg
 
 		JR		NZ,TYPE_EXIT				
+		
+		
+		LD	E,$FF						; Read the keyboard once per pass in case of CTRL C - Maybe add a pause here later too.  
+		LD	C,Direct_Console_IO			; Keyboard Interrupt on type added 29-12-2023
+		CALL	BDOS
+		CP	$03
+		JP	Z,TYPE_EXIT								; Break point. Once per pass.
+		
+		
 		CALL	PRINT_RECORD			; Print the record
 		JR		TYPE_READ
 		
@@ -2017,6 +2030,11 @@ PRINT_RECORD:
 		LD		B,128
 		LD		HL,$0080				; DMA address.
 PRINT_RECORD_LOOP:
+
+		LD		A,(HL)					; Bugfix 29-12-2023 - This was occuring AFTER the output. Don't output EOF
+		CP		$1A						; CTRL'Z'
+		RET		Z						; Is end of file. Exit here now if that happens. 
+		
 		PUSH	HL
 		PUSH	BC
 		LD		E,(HL)
@@ -2024,10 +2042,7 @@ PRINT_RECORD_LOOP:
 		CALL	BDOS
 		POP		BC
 		POP		HL
-		
-		LD		A,(HL)
-		CP		$1A						; CTRL'Z'
-		RET		Z						; Is end of file. Exit here now if that happens. 
+
 		
 		INC		HL
 		DJNZ	PRINT_RECORD_LOOP

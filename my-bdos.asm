@@ -1,17 +1,20 @@
 ; LOKI OS. Logical Output and Keyboard Interface. 
-; LOKI OS is CP/M Compatible. At least it uses the same code calls, but is intended to "obfuscate" the hardware through a TTL Serial Bus @ 1Mbps.
+; LOKI OS is CP/M Compatible. At least it uses the same API calls, but is intended to "obfuscate" the hardware through a TTL Serial Bus @ 1Mbps.
 ; The "Megabus" is a serial shared networking protocol that allows calls for any function to be made over serial - eg, Disk over serial...  Console over serial.
 ; Protocol is basically SLIP with some new concepts. So it's talking IP. 
+; 29-12-2023 - Still haven't added the IP bus - and won't add it to the BDOS - Will add it to drivers via the Loki Architecture network reserved slot or BIOS. 
 ;
 ; Stuff I still have to deal with -
 ;  BDOS uses it's own stack. - OK, Didn't know this. I need to figure out a clean way to do this. 
-;  CP/M is *not* case insensitive. It converts the command line to uppercase, but that's not the same thing.
-
+;  CP/M is *not* case insensitive. It converts the command line to uppercase, but that's not the same thing. 
+;
 ; BUGS - In Editor ( key SHIFT-9 key - screws up input and makes go back to line start. 
 ; BUG 25/12/2022	- Fixed the console input bug, ctrl codes were marked with 2 upper nibble instead of 1 (eg, $28 instead of $18 )
 ; BUG 9/3/2023 - Allocation Tables incorrect - Need to scale to disk size. 
 ; BUG 4/4/2023 - Rename function was fixed to lower FCB, needed to make work with ANY fcb with two name - Caused WS to fail. 
+; BUG 29/12/2023 - Was still using $0080 fixed for some operations, rather than the current DMA address. Patched in three places with date 29/12/2023 as a marker. 
 ;
+; To-Do - Fix up PREREAD_DIRECTORY for maximum entries and try to work out why I limited it at all?
 ;
 ;LD		B,H
 ;LD		A,L
@@ -660,6 +663,7 @@ RESET_DISK:
 		LD		BC,$00
 		CALL	SETSEC
 		LD		BC,$0080
+		LD		(CURRENT_DMA),BC	; Store the new current DMA. Bugfix 29-12-2023
 		CALL	SETDMA
 ;		CALL	READ
 
@@ -835,19 +839,28 @@ NO_AFN_AMBIG:
 
 ;16    10 | Close a File           | (DE)=FCB address | (A)=dir code     |
 CLOSE_FCB:	DW	$0000				; We can temporarily store the FCB of the extent we want to close. 
+CLOSE_OPERATION: DB	$00H			; This is a flag for CLOSE only, so we don't write the discovered extent to the DMA buffer or it will corrupt things. 
+
 CLOSE_FILE:							; See if the extent exists,
 									; Search for valid location... Need to adapt file search.
 									; Then need to modify DMA area and WRITE FCB to indexed location.
 									;
+		LD		A,$0FF
+		LD		(CLOSE_OPERATION),A		; Indicate we have a close operation, so don't do anything like writing to the DMA buffer when we find the directory entry. 
+
+CLOSE_FILE_TO_OPEN:					; We use CLOSE FILE to open a new file. But we don't flag it as a close operation. 
 		LD		(CLOSE_FCB),DE		; Let's not lose our original handle for the FCB we want to write to the directory space. 	
-		
-		LD		A,(DE)				; Let's change disk first. Note: We're 1 higher than the SELDSK value. 
-		LD		(MATCH_FCB),DE
-		CALL	MATCH_SELECTED_DISK		; Call Select Disk to select the correct drive. 
-		
-		
-		LD		DE,(CLOSE_FCB)			; Recover FCB pointer. 	
-		CALL	MATCH_FIRST_FILENAME	;	See if the extent already exists.
+			
+;		LD		A,(DE)				; Let's change disk first. Note: We're 1 higher than the SELDSK value. 
+;		LD		(MATCH_FCB),DE
+;		CALL	MATCH_SELECTED_DISK		; Call Select Disk to select the correct drive. 
+;		
+;		
+;		LD		DE,(CLOSE_FCB)			; Recover FCB pointer. 	
+; Removed 29/12/2023 - Seems I do ALL of the above in MATCH_FIRST_FILENAME as the first steps.  I don't know why I LD A,(DE). It serves no purpose given the next call. 
+;                      and Match_Selected_Disk does it again anyway...
+
+		CALL	MATCH_FIRST_FILENAME	;	See if the extent already exists. 
 		AND		%1111 1100				; 	mask for the response (remove the index)
 		JR		Z,CLOSE_FILE_OK			; If the extent already exists, we can just rewrite and close it. No need to find a blank to write. 
 		
@@ -1252,7 +1265,7 @@ WRITE_NEXT:
 										;		Update the Allocation Vector at the same time as the allocation is assigned. 
 										; Locate the sector/track for the block.
 										; Write the DMA to the Disk
-										; Update the counter in the extent. 
+										; Update the counter in the FCB. 
 										; Exit. 
 	CALL	DISK_GETPARAS				; Get the Track, Sector and Record for the write. Currently write is in code below. 
 
@@ -1349,7 +1362,7 @@ CREATE_CLEAR:
 		DJNZ	CREATE_CLEAR		; Zero out the allocations and the CR and R0,R1,R2
 									
 FORCE_CREATE_NEW_FILE:									
-		CALL	CLOSE_FILE			; Ironic isn't it? I use Close File with a new blank FCB to open a new file... Can't close without opening I guess.
+		CALL	CLOSE_FILE_TO_OPEN	; Ironic isn't it? I use Close File with a new blank FCB to open a new file... Can't close without opening I guess.
 		ret
 		
 		
@@ -1990,6 +2003,8 @@ PREREAD_DIRECTORY:							; First set up of directory flags.
 		JR		Z,PREREAD_CONT				; Let's also limit the upper byte at this time... No more than 256 files extents. jump if nothing in H. 
 		LD		HL,$003F					; Otherwise, let's reset it here, so that's 64 records max.
 		LD		(DIRECTORY_EXTENTS),HL		; And tweak - Note that if L in HL is greater than $3F, this won't limit it. 
+											; 29-12-2023 - OK, this is messed up. Wish I recorded more about this here.
+											; Maximum records is $07FF - which is 128 records per block, for 16K blocks, * 16 entries in the vectors. 
 PREREAD_CONT:
 		LD		BC,$00
 		CALL	SETTRK_CALL					; Track 0
@@ -2012,6 +2027,7 @@ DIRECTORY_FLAGS:DW	$00				; Directory Words when we initialise the drive... So w
 START_DMA:		DW	$00				; Start of DMA	
 START_SECTOR:	DW	$00				; START SECTOR = We will need to know which sector we are reading in multiple reads for find next. 
 DIRECTORY_EXTENTS: DW	$00				; How many extents are we going to read before we decide all directory entries have been read? (DRM+1)/4
+
 
 
 MATCH_NEXT_FILENAME:						; See if we get another match. Don't forget to reset the FCB.
@@ -2178,8 +2194,17 @@ MATCH_ALL12:
 		; Now we just look through 12 characters of the FCB filename and recognize ? as wildcard for all extents. 	
 		; We got a match! Get the start of the extent and print the filename 
 MATCH_PERFECT:										; Copy found extent to FCB. 
-		CALL	MATCH_WRITE_EXTENT		; Copy the extent to the record buffer. If we're doing an open or similar, we'll overwrite it on read. 
-
+		
+		LD		A,(CLOSE_OPERATION)		; Don't write the extent to the DMA for a CLOSE operation.
+		OR		A
+		CALL	Z,MATCH_WRITE_EXTENT		; Copy the extent to the record buffer. If we're doing an open or similar, we'll overwrite it on read. 
+										; OK, this badly breaks write when a new extent is required... It makes a copy of the Extent in the DMA area
+										; Problem is that when we get another extent, we write the entry to the DMA... 
+										; In the case we're writing an output, the output needs a new extent, and when we fetch one, we corrupt the DMA that holds the output. 
+										; Close Operation flag is a kludge... It may break things since I think OPEN also uses CLOSE...
+		XOR		A
+		LD		(CLOSE_OPERATION),A		; Clear the close flag...
+		
 		LD		A,(DIR_CODE)			; Retrieve the DIR_CODE. 
 		ret								; Return here, with the DIR_CODE intact because we have a match. 
 										; Here we can break out of the process if we want... We can increment A and call it again later. 
@@ -2233,7 +2258,8 @@ MATCH_NEXT_SECTOR:
 FCB_EXTENT:	DB	$00	; temporary store for the EX value in the FCB.
 
 MATCH_WRITE_FCB:						; We can write the opened FCB from the current directory record (physical extent).  
-		LD		HL,$0080				; Temp File Buffer
+;		LD		HL,$0080				; Temp File Buffer
+		LD		HL,(CURRENT_DMA)		; Get the current DMA location. ( Bugfix 29-12-2023 causing write of file name to wrong DMA )
 		CALL	LOCATE_EXTENT			; Need to call this immediately after Match_Start completes. It uses the variables set up there. 		; 
 
 		LD		IY,(MATCH_FCB)		; Now we have the FCB in IY and the DPB in IX.
@@ -2244,7 +2270,7 @@ MATCH_WRITE_FCB:						; We can write the opened FCB from the current directory r
 MATCH_WRITE_FCB_LP:
 		INC		HL						; Yeah, this is LAZY AS, but I have both the right pointers here so I'll use IX and IY. 
 		INC		IY
-		LD		A,(HL)				; Get the byte from the extent.
+		LD		A,(HL)					; Get the byte from the extent.
 		LD		(IY+0),A				; Store it in the FCB
 		DJNZ	MATCH_WRITE_FCB_LP		; This will make the FCB match the extent that is found. 
 		
@@ -2269,8 +2295,9 @@ LOCATE_EXTENT:
 		ADD		HL,BC				; Get the address of the start of the record in HL. 4 extents per record. 
 		ret
 		
-MATCH_WRITE_EXTENT:					; Like FCB, but copies ( right now ) to 0080+(DIRCODE)
-		LD		HL,$0080			; Temp File Buffer
+MATCH_WRITE_EXTENT:					; Like FCB, but copies ( right now ) to 0080+(DIRCODE) - Nope, shift this to DMA wherever. 
+;		LD		HL,$0080			; Temp File Buffer
+		LD		HL,(CURRENT_DMA)	; Bugfix to address changing of the DMA buffer - 29-12-2023
 		CALL	LOCATE_EXTENT
 		LD		B,31					; 32 characters, but we want 31 copied, since the first is the User ID. We ignore the other 4 bytes of the FCB. 
 MATCH_WRITE_EXT_LP:
